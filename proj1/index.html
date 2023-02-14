@@ -1,7 +1,177 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 1 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<script>
+  MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'global' }
+  };
+</script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+</script>
+
+<title>CS 184 Rasterizer</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2023</h1>
+<h1 align="middle">Project 1: Rasterizer</h1>
+<h2 align="middle">Martin Hodde CS184-ABW, Kayla Kranen CS184-???</h2>
+
+<br>
+<div align="middle">
+  <img src="images/dragon.png" align="middle" width="400px"/>
+</div>
+<br>
+
+<h2 align="middle">Overview</h2>
+<p>
+  In this project we implement a basic rasterizer, a program that takes an analog image as input and renders discrete color values over a grid of pixels as an approximate output. Our rasterizer will be able to fill triangles and leverage the barycentric coordinate system to facilitate linear interpolation across them. It will also perform antialiasing via supersampling to capture high-frequency details at lower resolution while demonstrating shape warping according to geometric transformations. Finally, our program will experiment with both pixel and level sampling techniques to achieve varying visual results for mapping textures to surfaces. A motif that appeared throughout this project is that temporarily capturing extra visual information and then using it to inform lower-dimensional output data achieves appealing results.
+</p>
+
+<h2 align="middle">Section I: Rasterization</h2>
+
+<h3 align="middle">Part 1: Drawing Single-Color Triangles</h3>
+<p>
+  We represent triangles as a set of 3 different 2-dimensional points, each given by a pair of floating point numbers. To rasterize a triangle in this form, we begin by forming a bounding box around the triangle by isolating the $x$ and $y$ values, taking the minimum and maximum of these two sets, and then rounding all results down to the nearest integer. Let us denote these values for convenience as $x_{\min}$, $x_{\max}$, $y_{\min}$, and $y_{\max}$.
+</p>
+  
+<p>
+  Equipped with these bounds, we iterate through all integers from $x_{\min}$ to $x_{\max}$ in the outer loop and $y_{\min}$ to $y_{\max}$ in the inner loop, thereby reaching each sample in the bounding box. For each of these sample points, we add 1/2 to both the $x$ and $y$ dimension so that we sample the center of the pixel, then perform a three-line test to check if the pixel falls within the bounds of the triangle. If it does, we fill the pixel with the specified color for the triangle; otherwise, we leave it empty and continue with the next pixel in the bounding box.
+</p>
+
+<br>
+<div align="middle">
+  <img src="images/task1.png" align="middle" width="400px"/>
+  <figcaption align="middle">Green Triangle Rasterized</figcaption>
+</div>
+<br>
+
+<h3 align="middle">Part 2: Antialiasing by Supersampling</h3>
+<p>
+  Supersampling is essentially equivalent to rasterizing a higher-resolution frame and then downsampling to the intended resolution via color averaging in order to preserve high-frequency details, thereby rendering a more realistic depiction of the desired scene. Hence, to support our supersampling algorithm, we first had to expand the capacity of the sample buffer by a factor of the sampling rate to fit the extra data that supersampling yields.
+</p>
+
+<p>
+  To rasterize triangles, we scaled the vertices by the square root of the sampling rate and then performed three-line tests on each of the subsamples within the original pixels, coloring them accordingly. To rasterize points (and lines) we colored in all subpixels corresponding to each output pixel the same color such that when the average is computed later, the original color is preserved without the background color bleeding in.
+</p>
+  
+<p>
+  This averaging is performed as the last step of the supersampling algorithm when converting from sample buffer values to condensed RGB values that are placed in the target frame buffer. This averaging operation results in smoother transitions between finer image details that cannot be captured by coarser sampling. In this sense, supersampling is our method of spatial antialiasing, allowing higher-dimensional information to be preserved to some extent in a lower-dimensional domain.
+</p>
+
+<br>
+<div align="middle">
+  <table>
+    <tr>
+      <td>
+        <img src="images/task2-1.png" align="middle" width="400px"/>
+        <figcaption align="middle">Rate: 1 per Pixel</figcaption>
+      </td>
+      <td>
+        <img src="images/task2-2.png" align="middle" width="400px"/>
+        <figcaption align="middle">Rate: 4 per Pixel</figcaption>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <br>
+      </td>
+      <td>
+        <br>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <img src="images/task2-3.png" align="middle" width="400px"/>
+        <figcaption align="middle">Rate: 9 per Pixel</figcaption>
+      </td>
+      <td>
+        <img src="images/task2-4.png" align="middle" width="400px"/>
+        <figcaption align="middle">Rate: 16 per Pixel</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<p>
+  Supersampling results in less jagged edges, which is especially evident in sharp corners such as the ones that appear on skinny triangles. A sampling rate of 1 corresponds to our naive binary approach in which the pixel either falls within the bounds of a triangle and is fully colored, or is out of bounds and therefore left unaltered. Higher sampling rates, on the other hand, provide an illusion of partial pixel containment within triangles, which upon closer inspection manifests simply as color blending with nearby supersampled pixels. This effect is enhanced as the sampling rate increases, as it allows for a broader range of color gradients, creating even more seamless transitions when viewed from afar.
+</p>
+
+<h3 align="middle">Part 3: Transforms</h3>
+<p>
+Below, we show Cubeman in his default form, as well as our custom transformation in which Cubeman performs an incredibly aggressive jumping jack.
+</p>
+
+<div align="middle">
+  <table>
+    <tr>
+      <td>
+        <img src="images/task3-1.png" align="middle" width="400px"/>
+        <figcaption align="middle">T-Pose</figcaption>
+      </td>
+      <td style="vertical-align: bottom">
+        <img src="images/task3-2.png" align="middle" width="480px"/>
+        <figcaption align="middle">Jumping Jack</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<h2 align="middle">Section II: Sampling</h2>
+
+<h3 align="middle">Part 4: Barycentric Coordinates</h3>
+<p>
+  The barycentric coordinates of a point with respect to the vertices of a triangle encapsulate the extent to which each vertex contributes to the location of the point. Thus, 3 coefficients ($\alpha$, $\beta$, and $\gamma$) corresponding to the weight of each vertex, fully define a point in this coordinate system. Note that because these weights represent proportions, they are constrained such that they sum to 1. In the images below, we employ barycentric coordinates to smoothly interpolate the RGB color channels across the interior of a triangle and an entire circle using the coefficients of each vertex to compute a weighted color average for each pixel.
+</p>
+
+<br>
+<div align="middle">
+  <table>
+    <tr>
+      <td>
+        <img src="images/task4-1.png" align="middle" width="350px"/>
+        <br><br>
+        <figcaption align="middle">Interpolation over Triangle</figcaption>
+      </td>
+      <td>
+        <img src="images/task4-2.png" align="middle" width="305px"/>
+        <br><br>
+        <figcaption align="middle">Color Wheel</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<h3 align="middle">Part 5: "Pixel Sampling" for Texture Mapping</h3>
+
+
+<h3 align="middle">Part 6: "Level Sampling" with Mipmaps for Texture Mapping</h3>
+
+<br>
+<h4>Webpage Link:</h4>
+<a href=https://martinhodde.github.io/cs184-proj-webpage/proj1>martinhodde.github.io/cs184-proj-webpage/proj1</a>
+
+</body>
 </html>
