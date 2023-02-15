@@ -61,7 +61,7 @@
 <br>
 <div align="middle">
   <img src="images/task1.png" align="middle" width="400px"/>
-  <figcaption align="middle">Green Triangle Rasterized</figcaption>
+  <figcaption align="middle">Rasterized Triangles</figcaption>
 </div>
 <br>
 
@@ -142,7 +142,7 @@ Below, we show Cubeman in his default form, as well as our custom transformation
 
 <h3 align="middle">Part 4: Barycentric Coordinates</h3>
 <p>
-  The barycentric coordinates of a point with respect to the vertices of a triangle encapsulate the extent to which each vertex contributes to the location of the point. Thus, 3 coefficients ($\alpha$, $\beta$, and $\gamma$) corresponding to the weight of each vertex, fully define a point in this coordinate system. Note that because these weights represent proportions, they are constrained such that they sum to 1. In the images below, we employ barycentric coordinates to smoothly interpolate the RGB color channels across the interior of a triangle and an entire circle using the coefficients of each vertex to compute a weighted color average for each pixel.
+  The barycentric coordinates of a point with respect to the vertices of a triangle encapsulate the extent to which each vertex contributes to the location of the point. Thus, 3 coefficients ($\alpha$, $\beta$, and $\gamma$) corresponding to the weight of each vertex, fully define a point in this coordinate system. Note that because these weights represent proportions, they are constrained such that they sum to 1. In the images below, we employ barycentric coordinates to smoothly interpolate the RGB color channels across the interior of a triangle as well as an entire circle using the coefficients of each vertex to compute a weighted color average for each pixel.
 </p>
 
 <br>
@@ -166,7 +166,7 @@ Below, we show Cubeman in his default form, as well as our custom transformation
 
 <h3 align="middle">Part 5: "Pixel Sampling" for Texture Mapping</h3>
 <p>
-  In order to perform pixel sampling, we create a map between the barycentric coordinate points of the triangles we are trying to rasterize, and the corresponding coordinates in the uv space of the texture map. That is to say, for each point in the barycentric coordinate space, we determine the color of that point by sampling the color at the corresponding point in the texture space. There are two ways to perform this sampling: nearest, and bilinear. Nearest sampling selects the color of the pixel nearest to the point in the texture space. In contrast, bilinear sampling selects the weighted average of the colors of the 4 nearest pixels by using 2 levels of linear interpolation.
+  In order to perform pixel sampling, we create a map between the barycentric coordinate points of the triangles we are trying to rasterize, and the corresponding coordinates in the $uv$ space of the texture map. That is to say, for each point in the barycentric coordinate space, we determine the color of that point by sampling the color at the corresponding point in the texture space. There are two ways to perform this sampling: nearest, and bilinear. Nearest sampling selects the color of the pixel nearest to the point in the texture space. In contrast, bilinear sampling selects the weighted average of the colors of the 4 nearest pixels by using 2 levels of linear interpolation.
 </p>
 
 <br>
@@ -224,27 +224,27 @@ Below, we show Cubeman in his default form, as well as our custom transformation
 
 <h3 align="middle">Part 6: "Level Sampling" with Mipmaps for Texture Mapping</h3>
 <p>
-  Level sampling is similar to pixel sampling, but instead of sampling colors from a single texture map, we sample the colors from a multi-level mipmap. A mipmap is a precomputed mapping of filtered versions of a texture, with decreasing amounts of detail as the mipmap level increases. In order to determine which level of the mipmap to use, we compare the height and width of the pixel in the xy (screen) space to the height and width of the pixel in the uv (texture mapping) space. This computation composes several nonlinear functions such as a logarithm and maximum, which approximates the mipmap level as a float which we will denote as D. Since D is not an exact integer level, there are 2 ways to sample from the discrete levels we have computed: nearest, and bilinear. In the case of nearest-level sampling, we round D to the nearest whole number level, and then sample pixels from that level of mipmap, following the pixel sampling description above. In contrast, in the case of bilinear level sampling, we perform pixel sampling at the integer levels below and above D, and then take the weighted average of the pixel colors sampled at each level. 
+  Level sampling is similar to pixel sampling, but instead of sampling colors from a single texture map, we sample the colors from a multi-level mipmap. A mipmap is a precomputed mapping of filtered versions of a texture, with decreasing amounts of detail as the mipmap level increases. In order to determine which level of the mipmap to use, we compare the height and width of the pixel in the $xy$ (screen) space to the height and width of the pixel in the $uv$ (texture mapping) space. This computation composes multiple nonlinear functions such as a logarithm and maximum operation, that approximates the mipmap level as a float which we denote as $D$. Since $D$ is not an exact integer level, there are 2 ways to sample from the discrete levels we have computed: nearest, and bilinear (as with pixel sampling). In the case of nearest-level sampling, we round $D$ to the nearest whole number level, and then sample pixels from that level of mipmap, following the pixel sampling description above. For bilinear level sampling, we perform pixel sampling at the integer levels below and above $D$, and then take the weighted average of the pixel colors sampled at each level. 
 </p>
 
 <p>
-  After implementing supersampling, pixel sampling, and level sampling, we can select the optimal sampling technique based on what we need. Each of these sampling techniques has various tradeoffs between speed, memory usage, and anti-aliasing power that make them better and worse at sampling in specific situations.
+  After implementing supersampling, pixel sampling, and level sampling, we can select the optimal sampling technique based on what we need. Each of these sampling techniques has various tradeoffs between speed, memory usage, and antialiasing power that make them better and worse at sampling in specific situations.
 </p>
 
 <p>
-  Supersampling is a powerful anti-aliasing technique, but it becomes slower and uses more memory as the supersample size increases. This is because the sample buffer size scales by supersample size squared, resulting in more values to save in memory and more calculations for averages across more values, and a smoother, anti-aliased image.
+  Supersampling is a powerful antialiasing technique, but it becomes slower and uses more memory as the supersample size increases. This is because the sample buffer size scales by supersample size squared, resulting in more values to save in memory and more calculations for averages across more values, and a smoother, antialiased image.
 </p>
 
 <p>
-  Nearest pixel sampling is a fast, low-memory technique, but it does not perform anti-aliasing. This is because the technique maps each pixel in the result to a pixel in the texture map, which requires only a small number of calculations and saved pixels.
+  Nearest pixel sampling is a fast, low-memory technique, but it does not perform antialiasing. This is because the technique maps each pixel in the result to a pixel in the texture map, which requires only a small number of calculations and saved pixels.
 </p>
 
 <p>
-  Bilinear pixel sampling is a low-memory, medium-speed technique that helps with anti-aliasing. This is because every pixel in the resulting image is the weighted average of 4 samples from the texture mapping. This requires more calculations than the nearest pixel sampling, resulting in lower speed, but the weighted averaging done across the 4 nearest pixels helps with anti-aliasing.
+  Bilinear pixel sampling is a low-memory, medium-speed technique that helps with antialiasing. This is because every pixel in the resulting image is the weighted average of 4 samples from the texture mapping. This requires more calculations than the nearest pixel sampling, resulting in lower speed, but the weighted averaging done across the 4 nearest pixels helps with antialiasing.
 </p>
 
 <p>
-  Level samping is a fast, medium-memory technique that helps with anti-aliasing. This is because the mipmap is pre-computed (once) for all the levels, and can be frequently referenced to cut down on the number of calculations and speed up runtime. However, storing the mipmap requires 4/3 of the amount of space that storing a single texture mapping would take, therefore requiring more memory. Additionally, by utilizing higher levels of the mipmap, which contain filtered and blurred versions of the texture map, we can decrease aliasing.
+  Level samping is a fast, medium-memory technique that helps with antialiasing. This is because the mipmap is pre-computed (once) for all levels, and can be repeatedly referenced to cut down on the number of calculations and speed up runtime. However, storing the mipmap requires 4/3 of the amount of space that storing a single texture mapping would take, therefore requiring more memory. Additionally, by utilizing higher levels of the mipmap, which contain filtered and blurred versions of the texture map, we can reduce the effects of aliasing.
 </p>
 
 <br>
@@ -300,7 +300,7 @@ Below, we show Cubeman in his default form, as well as our custom transformation
 <br>
 
 <br>
-<h4>Webpage Link:</h4>
+<h3>Webpage Link:</h3>
 <a href=https://martinhodde.github.io/cs184-proj-webpage/proj1>martinhodde.github.io/cs184-proj-webpage/proj1</a>
 
 </body>
