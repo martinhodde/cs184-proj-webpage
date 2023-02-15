@@ -34,7 +34,7 @@
 
 <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2023</h1>
 <h1 align="middle">Project 1: Rasterizer</h1>
-<h2 align="middle">Martin Hodde CS184-ABW, Kayla Kranen CS184-???</h2>
+<h2 align="middle">Martin Hodde CS184-ABW, Kayla Kranen CS184-ACG</h2>
 
 <br>
 <div align="middle">
@@ -165,9 +165,139 @@ Below, we show Cubeman in his default form, as well as our custom transformation
 <br>
 
 <h3 align="middle">Part 5: "Pixel Sampling" for Texture Mapping</h3>
+<p>
+  In order to perform pixel sampling, we create a map between the barycentric coordinate points of the triangles we are trying to rasterize, and the corresponding coordinates in the uv space of the texture map. That is to say, for each point in the barycentric coordinate space, we determine the color of that point by sampling the color at the corresponding point in the texture space. There are two ways to perform this sampling: nearest, and bilinear. Nearest sampling selects the color of the pixel nearest to the point in the texture space. In contrast, bilinear sampling selects the weighted average of the colors of the 4 nearest pixels by using 2 levels of linear interpolation.
+</p>
+
+<br>
+<div align="middle">
+  <table>
+    <tr>
+      <td>
+        <img src="images/task5-1.png" align="middle" width="350px"/>
+        <br>
+        <figcaption align="middle">Sampling Method: Nearest <br> Rate: 1 per Pixel</figcaption>
+      </td>
+      <td>
+        <img src="images/task5-2.png" align="middle" width="350px"/>
+        <br>
+        <figcaption align="middle">Sampling Method: Nearest <br> Rate: 16 per Pixel</figcaption>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <br>
+      </td>
+      <td>
+        <br>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <img src="images/task5-3.png" align="middle" width="350px"/>
+        <br>
+        <figcaption align="middle">Sampling Method: Bilinear <br> Rate: 1 per Pixel</figcaption>
+      </td>
+      <td>
+        <img src="images/task5-4.png" align="middle" width="350px"/>
+        <br>
+        <figcaption align="middle">Sampling Method: Bilinear <br> Rate: 16 per Pixel</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<p>
+  As seen in the images above, there are relatively large differences in the results when using no supersampling. These differences get smaller as the supersample size increases.
+</p>
+
+<p>
+  When we sample 1 pixel per sample, the longitude and latitude lines created by the nearest sampling method have gaps in them, while the bilinear sampling lines mostly do not, with some exceptions near the edges. This is because the nearest sampling method only takes into account a single pixel when selecting color, which in the case of the longitude and latitude lines, is sometimes the water. In contrast, the bilinear sampling takes into account the 4 nearest pixels, so as long as even 1 of those pixels falls on the line in the texture mapping, it will come through in the result.
+</p>
+
+<p>
+  As we increase the supersample size, the nearest sampling method becomes an average of all of the pixels in the supersample, increasing the likelihood that at least some of the supersampled pixels fall on the lines instead of in the water. This results in the closing of the gaps in the lines, and appears more similar to the bilinear sampling method. As we increase the supersample size for the bilinear sampling method, the lines become smoother and less jagged, and gaps are filled in the latitude and longitude lines near the edges of the image.
+</p>
+
 
 
 <h3 align="middle">Part 6: "Level Sampling" with Mipmaps for Texture Mapping</h3>
+<p>
+  Level sampling is similar to pixel sampling, but instead of sampling colors from a single texture map, we sample the colors from a multi-level mipmap. A mipmap is a precomputed mapping of filtered versions of a texture, with decreasing amounts of detail as the mipmap level increases. In order to determine which level of the mipmap to use, we compare the height and width of the pixel in the xy (screen) space to the height and width of the pixel in the uv (texture mapping) space. This computation composes several nonlinear functions such as a logarithm and maximum, which approximates the mipmap level as a float which we will denote as D. Since D is not an exact integer level, there are 2 ways to sample from the discrete levels we have computed: nearest, and bilinear. In the case of nearest-level sampling, we round D to the nearest whole number level, and then sample pixels from that level of mipmap, following the pixel sampling description above. In contrast, in the case of bilinear level sampling, we perform pixel sampling at the integer levels below and above D, and then take the weighted average of the pixel colors sampled at each level. 
+</p>
+
+<p>
+  After implementing supersampling, pixel sampling, and level sampling, we can select the optimal sampling technique based on what we need. Each of these sampling techniques has various tradeoffs between speed, memory usage, and anti-aliasing power that make them better and worse at sampling in specific situations.
+</p>
+
+<p>
+  Supersampling is a powerful anti-aliasing technique, but it becomes slower and uses more memory as the supersample size increases. This is because the sample buffer size scales by supersample size squared, resulting in more values to save in memory and more calculations for averages across more values, and a smoother, anti-aliased image.
+</p>
+
+<p>
+  Nearest pixel sampling is a fast, low-memory technique, but it does not perform anti-aliasing. This is because the technique maps each pixel in the result to a pixel in the texture map, which requires only a small number of calculations and saved pixels.
+</p>
+
+<p>
+  Bilinear pixel sampling is a low-memory, medium-speed technique that helps with anti-aliasing. This is because every pixel in the resulting image is the weighted average of 4 samples from the texture mapping. This requires more calculations than the nearest pixel sampling, resulting in lower speed, but the weighted averaging done across the 4 nearest pixels helps with anti-aliasing.
+</p>
+
+<p>
+  Level samping is a fast, medium-memory technique that helps with anti-aliasing. This is because the mipmap is pre-computed (once) for all the levels, and can be frequently referenced to cut down on the number of calculations and speed up runtime. However, storing the mipmap requires 4/3 of the amount of space that storing a single texture mapping would take, therefore requiring more memory. Additionally, by utilizing higher levels of the mipmap, which contain filtered and blurred versions of the texture map, we can decrease aliasing.
+</p>
+
+<br>
+<div align="middle">
+  <table>
+    <tr>
+      <td>
+        <img src="images/task6-src.png" align="middle" width="700px"/>
+        <br><br>
+        <figcaption align="middle">Original Image</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<div align="middle">
+  <table>
+    <tr>
+      <td>
+        <img src="images/task6-1.png" align="middle" width="350px"/>
+        <br>
+        <figcaption align="middle">Level: 0 <br> Sampling Method: Nearest</figcaption>
+      </td>
+      <td>
+        <img src="images/task6-2.png" align="middle" width="350px"/>
+        <br>
+        <figcaption align="middle">Level: 0 <br> Sampling Method: Bilinear</figcaption>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <br>
+      </td>
+      <td>
+        <br>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <img src="images/task6-3.png" align="middle" width="350px"/>
+        <br>
+        <figcaption align="middle">Level: Nearest <br> Sampling Method: Nearest</figcaption>
+      </td>
+      <td>
+        <img src="images/task6-4.png" align="middle" width="350px"/>
+        <br>
+        <figcaption align="middle">Level: Nearest <br> Sampling Method: Bilinear</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
 
 <br>
 <h4>Webpage Link:</h4>
