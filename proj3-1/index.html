@@ -55,6 +55,7 @@
 <p>
 	Granted that we accurately model the interaction between the rays and the surfaces we attempt to portray, this path-tracing procedure constructs a physically faithful estimation of a given visual experience that is (hopefully) indistinguishable from a photograph of its tangible counterpart.
 </p>
+<br>
 
 <h2 align="middle">Part 1: Ray Generation and Scene Intersection</h2>
 <p>
@@ -267,7 +268,7 @@
       </td>
       <td>
         <img src="images/part3-6.png" align="middle" width="300px"/>
-				<figcaption align="middle">2 Light Rays</figcaption>
+				<figcaption align="middle">4 Light Rays</figcaption>
       </td>
     </tr>
 		<tr>
@@ -435,7 +436,7 @@
 
 <h3 align="middle">Part 5: Adaptive Sampling</h3>
 <p>
-  Until this point, we have been using a constant number of ray samples for every pixel while performing our path-tracing algorithm, perhaps wastefully so. Adaptive sampling address this dilemma by sampling randomly within each pixel until it converges to a particular value, up to some allowable tolerance, at which point we can safely terminate our sampling for the pixel in question. If a pixel's value takes too long to converge, the maximum number of samples specified is taken. This scheme helps improve rendering times by decreasing the total number of ray samples required.
+  Until this point, we have been using a constant number of ray samples for every pixel while performing our path-tracing algorithm, perhaps wastefully so. Adaptive sampling addresses this dilemma by sampling randomly within each pixel until it converges to a particular value, up to some allowable tolerance, at which point we can safely terminate our sampling for the pixel in question. If a pixel's value takes too long to converge, the maximum number of samples specified is taken. This scheme helps improve rendering times by decreasing the total number of ray samples required.
 </p>
 <p>
   To implement adaptive sampling, we maintain a running mean and variance of all of the sampled values so far for each pixel. After completing a batch of samples (of configurable size), we calculate the pixel's convergence value and compare it to the product of the running mean and the maximum tolerance. If the convergence is less than this acceptable bound, we stop sampling for that pixel. Otherwise, we continue until we reach either convergence or the maximum number of samples. Effectively, this procedure checks if new pixel samples vary significantly from the running mean and proceeds accordingly.
