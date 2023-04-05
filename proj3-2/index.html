@@ -1,7 +1,189 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 3-2 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+  th {
+		font-weight: normal;
+  }
+</style>
+<script>
+  MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'global' }
+  };
+</script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+</script>
+
+<title>CS 184 Path Tracer</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2023</h1>
+<h1 align="middle">Project 3-2: Path Tracer (Additional Features)</h1>
+<h2 align="middle">Martin Hodde CS184-ABW, Kayla Kranen CS184-ACG</h2>
+
+<br>
+<div align="middle">
+  <img src="images/part2-2.png" align="middle" width="500px"/>
+</div>
+<br>
+
+<h2 align="middle">Overview</h2>
+<p>
+	In this project, we extend our path tracer to handle reflection and refraction with respect to more complex surface materials. This will enable us to render a more interesting variety of visual scenes. Since we already have a functional path tracer that scatters light according to the physical characteristics of diffuse surfaces, all that remains is to categorize the new materials we wish to portray and specify how light should interact with them through their bidirectional scattering distribution functions (BSDF). Hence, to introduce some more aesthetic flavor to our path-traced scenes, we turn our attention to modeling mirror and glass materials as well as microfacet materials with varying roughness.
+</p>
+<br>
+
+<h2 align="middle">Part 1: Mirror and Glass Materials</h2>
+<p>
+	Mirrors are perfectly reflective, so when a 3D light ray comes into contact with such a surface, it undergoes a simple transformation in which the $x$ and $y$ components are inverted and no Lambertian falloff occurs. A completely refractive surface, on the other hand, allows light rays to pass through it, bending the light subject the object's index of refraction, consistent with Snell's Law. We also divide the transmittance by the square of the index of refraction, since radiance concentrates when a ray enters a material with a high index of refraction and disperses when it exits. In the event that total internal reflection occurs, we consider there to be no transmittance and return a zero vector.
+</p>
+<p>
+	We know that glass reflects a fraction of the light that hits it and refracts the remainder. The proportion of light rays that are reflected is represented by the Fresnel coefficient $R$, which we estimate using Schlick’s approximation. Thus, we simulate the behavior of glass materials by probabilistically reflecting and refracting the traced light rays that come into contact with a glass surface according to the result of a random coin flip with $p=R$. Below, we show an image sequence containing a mirror ball in the background and a glass ball in the foreground. These images are rendered with a constant 1024 samples per pixel and 16 samples per light ray, but with increasing maximum ray depths.
+</p>
+
+<br>
+<div align="middle">
+	<table cellpadding="10">
+		<tr>
+		  <td>
+			<img src="images/part1-1.png" align="middle" height="220px"/>
+			<figcaption align="middle">Max Ray Depth = 0</figcaption>
+		  </td>
+		  <td>
+			<img src="images/part1-2.png" align="middle" height="220px"/>
+			<figcaption align="middle">Max Ray Depth = 1</figcaption>
+		  </td>
+		</tr>
+	  </table>
+</div>
+<div align="middle">
+  <table cellpadding="10">
+    <tr>
+      <td>
+        <img src="images/part1-3.png" align="middle" height="220px"/>
+		<figcaption align="middle">Max Ray Depth = 2</figcaption>
+      </td>
+	  <td>
+		<img src="images/part1-4.png" align="middle" height="220px"/>
+		<figcaption align="middle">Max Ray Depth = 3</figcaption>
+	  </td>
+      <td>
+        <img src="images/part1-5.png" align="middle" height="220px"/>
+		<figcaption align="middle">Max Ray Depth = 4</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<div align="middle">
+	<table cellpadding="10">
+		<tr>
+		  <td>
+			<img src="images/part1-6.png" align="middle" height="220px"/>
+			<figcaption align="middle">Max Ray Depth = 5</figcaption>
+		  </td>
+		  <td>
+			<img src="images/part1-7.png" align="middle" height="220px"/>
+			<figcaption align="middle">Max Ray Depth = 100</figcaption>
+		  </td>
+		</tr>
+	  </table>
+</div>
+<p>
+	At a maximum depth of 0, we can only see the area light source, as expected. With 1 bounce, the walls and floor become diffusely illuminated and we can see directly reflected light at the top of both spheres—albeit, the mirror sphere reflects more light than the glass one. Light rays with depth 2 unveil reflections from the wall on the surface of the mirror ball, and to a lesser extent, the glass ball. A third bounce allows refraction through the glass ball to finally reach the eye, since light rays must bounce twice before even striking the back of the sphere. Moreover, 3 bounces causes the lit ceiling of the room to emerge in the reflection of the mirror ball, as this requires light to descend the height of the room twice and ascend it once before heading to the camera.
+</p>
+<p>
+	Adding another bounce to the scene allows considerably more light to get refracted through the glass sphere toward the camera. This manifests as an overall brighter glass ball with an especially glowing portion at the bottom, causing a concentrated beam of light to be sent to the bottom-right corner of the blue wall. The mirror ball also brightens up, specifically toward the bottom, and the reflection of the glass ball on the mirror ball is now colored blue due to refraction through the glass, off the wall, then back through the ball enabled by the fourth bounce. A 5-bounce ray depth produces a very similar image to that of 4 bounces, but slightly brighter from the boosted range of the casted rays. Finally, 100 ray bounces brightens the image further, especially on the ceiling, and brings out specular highlights on the top of the glass ball.
+</p>
+<br>
+
+<h2 align="middle">Part 2: Microfacet Material</h2>
+<p>
+	To implement the microfacet model for materials like plastic and metal, we begin by creating a microfacet BRDF evaluation function. We select the Beckmann probability density function to distribute the microfacet's normals, and query it exclusively at the half vector of the incident and exitant light rays, since the specularity of microfacets only allows normals along the half vector to reflect light. The normal distribution function component of the BRDF therefore depends exclusively on the angle between this half vector and the macro surface normal as well as the roughness of the surface. After sampling from the Beckmann distribution, we calculate the Fresnel term for the red, green, and blue channels (assuming each has its own wavelength) which describes the effective reflectivity of the material. This result relies on each material's inherent refractive indices and extinction coefficients at each RGB channel, which ultimately affects the coloration of the rendered surfaces. We also account for shadowing-masking, which indicates whether the microfacet is visible in the inbound or outbound direction.
+</p>
+<p>
+	Equipped with a microfacet BRDF now, we can query it via importance sampling. To do so, we sample the microfacet normal and reflect the light ray's outgoing direction with respect to the microfacet normal to establish the incident direction. Then, we derive the probability density function of the incident ray with respect to a solid angle. Since we are able to accurately sample this pdf and the incident light direction, we simply apply the BRDF evaluation function to obtain our reflected results.
+</p>
+<p>
+	The outcome of the microfacet model is parameterized by several configurable variables. One such parameter, $\alpha$, represents the roughness of the macro surface. As we increase $\alpha$, the object's surface becomes rougher, giving it a more diffuse appearance. In contrast, decreasing $\alpha$ yields a smoother surface that appears glossier and more polished. However, these polished surfaces also lead to high specularity and generate small white dots across the image. The result of varying $\alpha$ can be observed in the images that follow.
+</p>
+
+<br>
+<div align="middle">
+  <table cellpadding="10">
+    <tr>
+      <td>
+        <img src="images/part2-1.png" align="middle" height="250px"/>
+        <figcaption align="middle">$\alpha$ = 0.5</figcaption>
+      </td>
+      <td>
+        <img src="images/part2-2.png" align="middle" height="250px"/>
+        <figcaption align="middle">$\alpha$ = 0.25</figcaption>
+      </td>
+		</tr>
+		<tr>
+			<td>
+        <img src="images/part2-3.png" align="middle" height="250px"/>
+        <figcaption align="middle">$\alpha$ = 0.05</figcaption>
+      </td>
+	  	<td>
+        <img src="images/part2-4.png" align="middle" height="250px"/>
+        <figcaption align="middle">$\alpha$ = 0.005</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<p>
+	The sampling method also has a noticeable impact when rendering with the microfacet model. Cosine hemisphere sampling, a technique typically used for sampling diffuse BRDFs, produces high specularity when modeling a microfacet object with a smooth macro surface (low $\alpha$ value). This creates undesirable peppered spots scattered across the material. If we instead perform importance sampling according to the more suitable Beckmann distribution, we are able to curtail these speckles on the surface, producing a smoother, more natural-looking finish.
+</p>
+
+<br>
+<div align="middle">
+  <table cellpadding="10">
+    <tr>
+      <td>
+        <img src="images/part2-5.png" align="middle" height="250px"/>
+        <figcaption align="middle">Cosine Hemisphere Sampling</figcaption>
+      </td>
+      <td>
+        <img src="images/part2-6.png" align="middle" height="250px"/>
+        <figcaption align="middle">Beckmann Importance Sampling</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<p>
+	Tweaking other parameters like the refractive index and the extinction coefficient of the macro surface also has interesting visual effects on the constructed material. In the following image, we model a conductive material called Purple Plague, which is an aluminum and gold intermetallic. It has refractive indices of (1.3345, 1.8252, 2.1715) and extinction coefficients of (2.2091, 1.9416, 2.4688) for the red, green, and blue channels, respectively.
+</p>
+
+<br>
+<div align="middle">
+	<img src="images/part2-7.png" align="middle" width="500px"/>
+</div>
+<br>
+
+<h3>Webpage Link:</h3>
+<a href=https://martinhodde.github.io/cs184-proj-webpage/proj3-2>martinhodde.github.io/cs184-proj-webpage/proj3-2</a>
+</body>
 </html>
