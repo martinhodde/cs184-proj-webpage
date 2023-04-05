@@ -1,0 +1,175 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+  th {
+		font-weight: normal;
+  }
+</style>
+<script>
+  MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'global' }
+  };
+</script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+</script>
+
+<title>CS 184 Project Proposal</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2023</h1>
+<h1 align="middle">Final Project Proposal: Realistic Fireboy</h1>
+<h2 align="middle">Stefanie Gschwind, Martin Hodde, Kayla Kranen, Edith Llontop</h2>
+
+<br>
+<h2>Summary</h2>
+<p>
+	Inspired by the classic game Fireboy and Watergirl, we aim to animate a photorealistic Fireboy including simulations of flames and smoke.
+</p>
+<br>
+<div align="middle">
+  <img src="images/fireboy.png" align="middle" width="350px"/>
+</div>
+<br>
+
+<h2>Problem Description</h2>
+<p>
+    Fireboy and Watergirl is an iconic game of our childhoods, but it has not kept up with technological advancements in computer graphics. The objective of making humanoid characters out of unconventional materials such as water or fire is difficult but necessary for the continued advancement of animation and entertainment; in particular, it is challenging to balance the realistic behavior of fire with human-like features. This is an issue that is being tackled by cutting-edge animation studios like Pixar in their new film Elemental. While Pixar has opted for a more cartoon-like, stylized portrayal of the elemental characters, we strive for a physically faithful depiction.
+</p>
+
+<br>
+<div align="middle">
+  <table cellpadding="20">
+    <tr>
+      <td>
+        <img src="images/fireboy-watergirl.jpg" align="middle" height="220px"/>
+      </td>
+      <td>
+        <img src="images/elemental.jpg" align="middle" height="220px"/>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<h2>Goals and Deliverables</h2>
+
+<h3>Primary Goals</h3>
+<ul>
+  <li>
+    <b>Deliverable:</b> We plan to create a standing animation of Fireboy, focusing on accurately simulating his fire and the smoke he emits.
+  </li>
+  <li>
+    <b>Demo:</b> We will showcase our animation in a short video.
+  </li>
+  <li>
+    <b>Quality:</b> The quality of our deliverable can be gauged by the perceived accuracy of the fire simulation compared to real fire, as well as the amount of time it takes to render. For this to be a tool used for animation, it needs to be physically accurate, but also reasonably fast.
+  </li>
+  <li>
+    <b>Analysis:</b> Can we strike a balance between photorealism and cartoonish nostalgia? Can we build a lively character out of a fire simulation?
+  </li>
+</ul>
+
+<h3>Stretch Goals</h3>
+<ul>
+  <li>
+    <b>Deliverable:</b> We hope to create a moving animation of Fireboy, including his iconic running and jumping animations.
+  </li>
+  <li>
+    <b>Demo:</b> We hope to showcase our animation in a short video. If we have even more time, we plan to control Fireboy interactively.
+  </li>
+  <li>
+    <b>Quality:</b> The quality of our deliverable can be measured as we described above, as well as how well the animations match that of Fireboy's movements in the game.
+  </li>
+  <li>
+    <b>Analysis:</b> How does adding movement affect our fire simulation? Can we make the flames dance in harmony with Fireboy's motion?
+  </li>
+</ul>
+
+<h2>Schedule</h2>
+
+<ul>
+  <li>
+    <b>Week 1:</b> Produce a rendering of static fire.
+  </li>
+  <li>
+    <b>Week 2:</b> Add organic movement and smoke to the fire.
+  </li>
+  <li>
+    <b>Week 3:</b> Shape fire into Fireboy character.
+  </li>
+  <li>
+    <b>Week 4:</b> Prepare presentation and implement stretch goals (time permitting).
+  </li>
+</ul>
+
+<h2>Resources</h2>
+
+<ul>
+  <li>
+    <b>Rendering fire:</b>
+    <ul>
+      <li>
+        <a href=https://graphics.ucsd.edu/~henrik/papers/fire/fire.pdf>Physically Based Modeling and Animation of Fire</a>
+      </li>
+      <li>
+        <a href=https://www.sci.utah.edu/~vpegorar/research/2006_EGWNP.pdf>Physically-Based Realistic Fire Rendering</a>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <b>Rendering smoke:</b>
+    <ul>
+      <li>
+        <a href=https://gamedevelopment.tutsplus.com/tutorials/how-to-write-a-smoke-shader--cms-25587>How to Write a Smoke Shader</a>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <b>Combustion:</b>
+    <ul>
+      <li>
+        <a href=https://dl.acm.org/doi/10.1145/3526213#d1e3004>Physics-Based Combustion Simulation</a>
+      </li>
+      <li>
+        <a href=https://opencommons.uconn.edu/cgi/viewcontent.cgi?article=1258&context=gs_theses>Combustion Simulations Using Graphic Processing Units</a>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <b>Spatial Keyframing:</b>
+    <ul>
+      <li>
+        <a href=https://www-ui.is.s.u-tokyo.ac.jp/~takeo/papers/squirrel.pdf>Spatial Keyframing for Performance-driven Animation</a>
+      </li>
+      <li>
+        <a href=https://www-ui.is.s.u-tokyo.ac.jp/~takeo/java/smoothteddy/index.html>SmoothTeddy: Quick 3D Modeling and Painting</a>
+      </li>
+      <li>
+        <a href=https://www-ui.is.s.u-tokyo.ac.jp/~takeo/chameleon/chameleon.htm>Chameleon: 3D Paint for Teddy</a>
+      </li>
+    </ul>
+  </li>
+</ul>
+<br>
+
+</body>
+</html>
