@@ -41,22 +41,19 @@
 
 <br>
 <div align="middle">
-  <img src="images/part2-2.png" align="middle" width="500px"/>
+  <img src="images/bump_cloth.png" align="middle" width="320px"/>
 </div>
 <br>
 
 <h2 align="middle">Overview</h2>
 <p>
-	In this project, we extend our path tracer to handle reflection and refraction with respect to more complex surface materials. This will enable us to render a more interesting variety of visual scenes. Since we already have a functional path tracer that scatters light according to the physical characteristics of diffuse surfaces, all that remains is to categorize the new materials we wish to portray and specify how light should interact with them through their bidirectional scattering distribution functions (BSDF). Hence, to introduce some more aesthetic flavor to our path-traced scenes, we turn our attention to modeling mirror and glass materials as well as microfacet materials with varying roughness.
+	In this project, we model a cloth material as a system of discrete masses and springs, simulating its physical evolution within several environments in real time via numeral integration. We implement collisions between the cloth and rigid external objects as well as internal collisions among components of the cloth itself. Finally, we create a variety of shader programs to give the cloth an upgraded appearance, complete with personalized shading and textures.
 </p>
 <br>
 
-<h2 align="middle">Part 1: Mirror and Glass Materials</h2>
+<h2 align="middle">Part 1: Masses and Springs</h2>
 <p>
-	Mirrors are perfectly reflective, so when a 3D light ray comes into contact with such a surface, it undergoes a simple transformation in which the $x$ and $y$ components are inverted and no Lambertian falloff occurs. A completely refractive surface, on the other hand, allows light rays to pass through it, bending the light subject the object's index of refraction, consistent with Snell's Law. We also divide the transmittance by the square of the index of refraction, since radiance concentrates when a ray enters a material with a high index of refraction and disperses when it exits. In the event that total internal reflection occurs, we consider there to be no transmittance and return a zero vector.
-</p>
-<p>
-	We know that glass reflects a fraction of the light that hits it and refracts the remainder. The proportion of light rays that are reflected is represented by the Fresnel coefficient $R$, which we estimate using Schlick’s approximation. Thus, we simulate the behavior of glass materials by probabilistically reflecting and refracting the traced light rays that come into contact with a glass surface according to the result of a random coin flip with $p=R$. Below, we show an image sequence containing a mirror ball in the background and a glass ball in the foreground. These images are rendered with a constant 1024 samples per pixel and 16 samples per light ray, but with increasing maximum ray depths.
+	To simulate our cloth, we construct a grid of point masses and connect them with three different types of springs. Structural springs connect adjacent point masses horizontally and vertically while shearing springs link point masses diagonally across the structural springs. Bending springs, on the other hand, attach every two point masses both in the horizontal and vertical direction, leaving a gap to allow more flexibility. In the following images, we toggle various spring constraints and observe the resulting structural changes to the cloth mesh.
 </p>
 
 <br>
@@ -64,126 +61,347 @@
 	<table cellpadding="10">
 		<tr>
 		  <td>
-			<img src="images/part1-1.png" align="middle" height="220px"/>
-			<figcaption align="middle">Max Ray Depth = 0</figcaption>
+        <img src="images/part1-1.png" align="middle" height="250px"/>
+        <figcaption align="middle">No Shearing</figcaption>
 		  </td>
 		  <td>
-			<img src="images/part1-2.png" align="middle" height="220px"/>
-			<figcaption align="middle">Max Ray Depth = 1</figcaption>
+        <img src="images/part1-2.png" align="middle" height="250px"/>
+        <figcaption align="middle">Only Shearing</figcaption>
 		  </td>
+      <td>
+        <img src="images/part1-3.png" align="middle" height="250px"/>
+		    <figcaption align="middle">All Constraints</figcaption>
+      </td>
 		</tr>
-	  </table>
-</div>
-<div align="middle">
-  <table cellpadding="10">
-    <tr>
-      <td>
-        <img src="images/part1-3.png" align="middle" height="220px"/>
-		<figcaption align="middle">Max Ray Depth = 2</figcaption>
-      </td>
-	  <td>
-		<img src="images/part1-4.png" align="middle" height="220px"/>
-		<figcaption align="middle">Max Ray Depth = 3</figcaption>
-	  </td>
-      <td>
-        <img src="images/part1-5.png" align="middle" height="220px"/>
-		<figcaption align="middle">Max Ray Depth = 4</figcaption>
-      </td>
-    </tr>
   </table>
 </div>
+<br>
+
+<h2 align="middle">Part 2: Simulation via Numerical Integration</h2>
+<p>
+	Setting the cloth in motion first entails computing all of the external and spring correction forces acting on the point masses in the mesh. Since we want the bending springs to stretch more liberally than the structural and shearing springs, we multiply its spring constant by a factor of 0.2. After obtaining the relevant force vectors, we apply Verlet integration, an explicit numerical integrator, to update the positions of the point masses for the next time step. The Verlet equation is as follows:
+</p>
+
+<div align="middle">
+  <img src="images/verlet.png" align="middle" width="650px"/>
+</div>
+
+<p>
+	where $x_t$ is the 3D position of the point mass at time $t$, $dt$ is the duration of a time step, and $d$ is the damping term. In order to prevent the springs from becoming excessively deformed as the simulation progresses, we further constrain the mass-spring mesh such that each spring's length can stretch by at most 10% of its resting length per time step. The following animation shows the wireframe of the cloth falling from an initial horizontal position to a resting state in which it hangs from two pinned points.
+</p>
+
+<br>
+<div align="middle">
+  <img src="images/part2-1.gif" align="middle" height="250px"/>
+  <figcaption align="middle">Wireframe Falling</figcaption>
+</div>
+<br>
+
+<p>
+  As we increase the spring constant parameter, the movement of the cloth becomes more rigid and less bouncy since the springs require a greater amount of force to stretch the same distance. At a low spring constant, the cloth appears to ripple on its way down and exhibits more stretchiness. It also has much finer horizontal creases at the top. Once it reaches the bottom, the cloth continues to bounce and hangs relatively low once it reaches a resting state. In contrast, the cloth holds its structural integrity and behaves similarly to a swinging sheet of paper with a high spring constant. At the bottom, it does not bounce much and simply hangs at rest with minimal stretching.
+</p>
+
+<br>
 <div align="middle">
 	<table cellpadding="10">
 		<tr>
 		  <td>
-			<img src="images/part1-6.png" align="middle" height="220px"/>
-			<figcaption align="middle">Max Ray Depth = 5</figcaption>
+        <img src="images/part2-2.gif" align="middle" height="250px"/>
+        <figcaption align="middle">$k_s = 5 \; N/m$</figcaption>
 		  </td>
 		  <td>
-			<img src="images/part1-7.png" align="middle" height="220px"/>
-			<figcaption align="middle">Max Ray Depth = 100</figcaption>
+        <img src="images/part2-3.gif" align="middle" height="250px"/>
+        <figcaption align="middle">$k_s = 50,000 \; N/m$</figcaption>
 		  </td>
 		</tr>
-	  </table>
+  </table>
 </div>
-<p>
-	At a maximum depth of 0, we can only see the area light source, as expected. With 1 bounce, the walls and floor become diffusely illuminated and we can see directly reflected light at the top of both spheres—albeit, the mirror sphere reflects more light than the glass one. Light rays with depth 2 unveil reflections from the wall on the surface of the mirror ball, and to a lesser extent, the glass ball. A third bounce allows refraction through the glass ball to finally reach the eye, since light rays must bounce twice before even striking the back of the sphere. Moreover, 3 bounces causes the lit ceiling of the room to emerge in the reflection of the mirror ball, as this requires light to descend the height of the room twice and ascend it once before heading to the camera.
-</p>
-<p>
-	Adding another bounce to the scene allows considerably more light to get refracted through the glass sphere toward the camera. This manifests as an overall brighter glass ball with an especially glowing portion at the bottom, causing a concentrated beam of light to be sent to the bottom-right corner of the blue wall. The mirror ball also brightens up, specifically toward the bottom, and the reflection of the glass ball on the mirror ball is now colored blue due to refraction through the glass, off the wall, then back through the ball enabled by the fourth bounce. A 5-bounce ray depth produces a very similar image to that of 4 bounces, but slightly brighter from the boosted range of the casted rays. Finally, 100 ray bounces brightens the image further, especially on the ceiling, and brings out specular highlights on the top of the glass ball.
-</p>
 <br>
 
-<h2 align="middle">Part 2: Microfacet Material</h2>
 <p>
-	To implement the microfacet model for materials like plastic and metal, we begin by creating a microfacet BRDF evaluation function. We select the Beckmann probability density function to distribute the microfacet's normals, and query it exclusively at the half vector of the incident and exitant light rays, since the specularity of microfacets only allows normals along the half vector to reflect light. The normal distribution function component of the BRDF therefore depends exclusively on the angle between this half vector and the macro surface normal as well as the roughness of the surface. After sampling from the Beckmann distribution, we calculate the Fresnel term for the red, green, and blue channels (assuming each has its own wavelength) which describes the effective reflectivity of the material. This result relies on each material's inherent refractive indices and extinction coefficients at each RGB channel, which ultimately affects the coloration of the rendered surfaces. We also account for shadowing-masking, which indicates whether the microfacet is visible in the inbound or outbound direction.
+  Constructing a dense cloth allows it to stretch longer distances, as the force of gravity on the increased collective mass of the cloth pulls harder on the cloth's springs. This leads to a lower dip between the pinned masses and an overall longer appearance. At a low density, the cloth hardly expands, creating a shorter look akin to that of the cloth produced by the stiff spring constant above.
+</p>
+
+<br>
+<div align="middle">
+	<table cellpadding="10">
+		<tr>
+		  <td>
+        <img src="images/part2-4.gif" align="middle" height="250px"/>
+        <figcaption align="middle">$\rho = 3 \; g/cm^2$</figcaption>
+		  </td>
+		  <td>
+        <img src="images/part2-5.gif" align="middle" height="250px"/>
+        <figcaption align="middle">$\rho = 150 \; g/cm^2$</figcaption>
+		  </td>
+		</tr>
+  </table>
+</div>
+<br>
+
+<p>
+	Aggressive damping causes the cloth to fall at a much slower pace but it also takes less time to come to rest. With a low damping factor, the cloth falls rapidly and proceeds to bounce back and forth for some time before eventually arriving at its resting state. Regardless of the damping value, however, the two cloths appear identical once they have completely stopped moving.
+</p>
+
+<br>
+<div align="middle">
+	<table cellpadding="10">
+		<tr>
+		  <td>
+        <img src="images/part2-6.gif" align="middle" height="250px"/>
+        <figcaption align="middle">$\text{Damping} = 0.1$</figcaption>
+		  </td>
+		  <td>
+        <img src="images/part2-7.gif" align="middle" height="250px"/>
+        <figcaption align="middle">$\text{Damping} = 0.4$</figcaption>
+		  </td>
+		</tr>
+  </table>
+</div>
+<br>
+
+<p>
+	Here, we also show the cloth at rest with all four of its corner pinned, forcing it to assume a bowl shape.
+</p>
+
+<br>
+<div align="middle">
+  <img src="images/part2-8.png" align="middle" width="400px"/>
+  <figcaption align="middle">Pinned Corners</figcaption>
+</div>
+<br>
+
+<h2 align="middle">Part 3: Handling Collisions with Other Objects</h2>
+<p>
+	At this point, we can constrain our point mass position updates to account for collisions with external objects. For every point mass at each time step, we check if it has just passed through the surface of a sphere or plane and nudge it back slightly above the surface if so. This gives the appearance of the cloth landing smoothly on the object.
 </p>
 <p>
-	Equipped with a microfacet BRDF now, we can query it via importance sampling. To do so, we sample the microfacet normal and reflect the light ray's outgoing direction with respect to the microfacet normal to establish the incident direction. Then, we derive the probability density function of the incident ray with respect to a solid angle. Since we are able to accurately sample this pdf and the incident light direction, we simply apply the BRDF evaluation function to obtain our reflected results.
+  Similar to the hanging cloth from the previous section, increasing the stiffness of the springs makes the cloth move in a more rigid manner. With a low spring constant, the cloth stretches nearly all the way around the bottom of the ball before coming to a resting droopy state with many wrinkles. The default moderate spring constant allows the cloth to wrap most of the way around the ball, ultimately yielding fewer wrinkles and a bit more lateral stiffness near the top end of the ball. Lastly, a high spring stiffness forces the cloth to stretch to a lesser extent and arrive at rest with just a few large creases. The resulting wings that extend beyond either side of the ball give the scene a dumpling-esque look.
+</p>
+
+<br>
+<div align="middle">
+	<table cellpadding="10">
+		<tr>
+		  <td>
+        <img src="images/part3-1.gif" align="middle" height="280px"/>
+        <figcaption align="middle">$k_s = 500 \; N/m$</figcaption>
+		  </td>
+		  <td>
+        <img src="images/part3-2.gif" align="middle" height="280px"/>
+        <figcaption align="middle">$k_s = 5,000 \; N/m$</figcaption>
+		  </td>
+      <td>
+        <img src="images/part3-3.gif" align="middle" height="280px"/>
+        <figcaption align="middle">$k_s = 50,000 \; N/m$</figcaption>
+		  </td>
+		</tr>
+  </table>
+</div>
+<br>
+
+<p>
+  Below, we also demonstrate the cloth falling onto a parallel plane beneath it.
+</p>
+
+<br>
+<div align="middle">
+  <img src="images/part3-4.gif" align="middle" width="400px"/>
+  <figcaption align="middle">Plane Collision</figcaption>
+</div>
+<br>
+
+<h2 align="middle">Part 4: Handling Self-Collisions</h2>
+<p>
+	In addition to colliding with external objects, we can update our model to allow the cloth to collide with itself and produce a folding effect without clipping artifacts. If two point masses are sufficiently close to one another, we repel them away from each other very slightly such that the cloth does not cave in on itself as the simulation advances. A naive implementation of this technique would be prohibitively slow for a real-time simulation, so we construct a 3D spatial hash map to partition the point masses into spatial buckets in the model space. This expedites the simulation by making nearby point mass position lookups a constant-time operation rather than a linear-time one.
+</p>
+
+<br>
+<div align="middle">
+  <img src="images/part4-1.gif" align="middle" width="300px"/>
+  <figcaption align="middle">Self-Collision</figcaption>
+</div>
+<br>
+
+<p>
+  We observe in the following animations that a low density leads to a coarser cloth with few creases while a high density yields a bouncy and fluid cloth with many small wrinkles. Intuitively, a low-density cloth has a tougher time seamlessly bumping itself out of place when it self-collides due to the limitations in mobility that a low number of point masses entails. A cloth with many point masses can exhibit finer perturbations and more complex folds.
+</p>
+
+<br>
+<div align="middle">
+	<table cellpadding="10">
+		<tr>
+		  <td>
+        <img src="images/part4-2.gif" align="middle" height="260px"/>
+        <figcaption align="middle">$\rho = 3 \; g/cm^2$</figcaption>
+		  </td>
+		  <td>
+        <img src="images/part4-3.gif" align="middle" height="260px"/>
+        <figcaption align="middle">$\rho = 25 \; g/cm^2$</figcaption>
+		  </td>
+      <td>
+        <img src="images/part4-4.gif" align="middle" height="260px"/>
+        <figcaption align="middle">$\rho = 72 \; g/cm^2$</figcaption>
+		  </td>
+		</tr>
+  </table>
+</div>
+<br>
+
+<p>
+  Interestingly, it appears that varying the spring constant induces inverse behavior relative to adjusting the density in the same direction. Hence, a relatively small spring constant produces a springy cloth riddled with lots of tiny wrinkles while a larger spring stiffness forces the cloth to bend less with just a few long creases.
+</p>
+
+<br>
+<div align="middle">
+	<table cellpadding="10">
+		<tr>
+		  <td>
+        <img src="images/part4-5.gif" align="middle" height="260px"/>
+        <figcaption align="middle">$k_s = 400 \; N/m$</figcaption>
+		  </td>
+		  <td>
+        <img src="images/part4-6.gif" align="middle" height="260px"/>
+        <figcaption align="middle">$k_s = 8,000 \; N/m$</figcaption>
+		  </td>
+      <td>
+        <img src="images/part4-7.gif" align="middle" height="260px"/>
+        <figcaption align="middle">$k_s = 25,000 \; N/m$</figcaption>
+		  </td>
+		</tr>
+  </table>
+</div>
+<br>
+
+<h2 align="middle">Part 5: Shaders</h2>
+<p>
+	A shader is a program that computes lighting and color effects during the rendering of a 3D scene according to the stylistic vision of the artist/programmer. We use OpenGL Shading Language (GLSL) to write vertex and fragment shaders for the cloth and other objects in our simulations. To render images within this framework, the vertex shader first processes individual vertices as a collection of associated vectors (position, normal, tangent, etc.), mapping them from world space to model space, then normalizing them and adjusting their direction if desired. These output vectors from the vertex shader are fed in as input to a fragment shader which then calculates the output color of a particular fragment of an object according to the programmed lighting effect. Together, these pipelined shaders allow us to efficiently render complex visual scenes.
 </p>
 <p>
-	The outcome of the microfacet model is parameterized by several configurable variables. One such parameter, $\alpha$, represents the roughness of the macro surface. As we increase $\alpha$, the object's surface becomes rougher, giving it a more diffuse appearance. In contrast, decreasing $\alpha$ yields a smoother surface that appears glossier and more polished. However, these polished surfaces also lead to high specularity and generate small white dots across the image. The result of varying $\alpha$ can be observed in the images that follow.
+  As discussed throughout the course, the Blinn-Phong shading model is broken into three distinct, linear parts. The ambient component represents the small sum of light scattered about the scene and subsequently reflected off the surface of an object. Diffuse lighting comes from direct uniform reflection off the rougher parts of an object's surface while specular highlights depict shiny portions of the object. Below, we show an animation of the cloth dropping on the ball for each of the individual Blinn-Phong components, followed by all three combined.
+</p>
+
+<br>
+<div align="middle">
+	<table cellpadding="10">
+		<tr>
+		  <td>
+        <img src="images/part5-1.gif" align="middle" height="280px"/>
+        <figcaption align="middle">Ambient</figcaption>
+		  </td>
+		  <td>
+        <img src="images/part5-2.gif" align="middle" height="280px"/>
+        <figcaption align="middle">Diffuse</figcaption>
+		  </td>
+      <td>
+        <img src="images/part5-3.gif" align="middle" height="280px"/>
+        <figcaption align="middle">Specular</figcaption>
+		  </td>
+		</tr>
+  </table>
+</div>
+<br>
+<div align="middle">
+  <img src="images/part5-4.gif" align="middle" height="280px"/>
+  <figcaption align="middle">Blinn-Phong</figcaption>
+</div>
+<br>
+
+<p>
+  For our texture mapping shader, we introduce Composition VII, an abstract oil painting from 1913 by Wassily Kandinsky.
+</p>
+
+<br>
+<div align="middle">
+	<table cellpadding="10">
+		<tr>
+		  <td>
+        <img src="images/texture_1.png" align="middle" height="280px"/>
+        <figcaption align="middle">Composition VII</figcaption>
+		  </td>
+		  <td>
+        <img src="images/part5-5.gif" align="middle" height="280px"/>
+        <figcaption align="middle">Texture Mapping</figcaption>
+		  </td>
+		</tr>
+  </table>
+</div>
+<br>
+
+<p>
+  Bump mapping involves tweaking the normal vectors of an object such that the fragment shader produces the illusion of elevated contours on rendered surfaces according to the provided texture. In our implementation, we opted to induce “bumps” for a particular fragment based on a height map defined by the magnitude of the red channel of the sampled location of the texture. Displacement mapping is an extension of bump mapping in which we physically alter the position of the vertices in the vertex shader to reflect the height map within the geometry of the object as well. For this section, we apply a leafy texture to the cloth and ball to obtain the following results.
+</p>
+
+<br>
+<div align="middle">
+	<table cellpadding="10">
+		<tr>
+		  <td>
+        <img src="images/texture_2.png" align="middle" height="280px"/>
+        <figcaption align="middle">Leaves</figcaption>
+		  </td>
+		  <td>
+        <img src="images/part5-6.gif" align="middle" height="280px"/>
+        <figcaption align="middle">Bump Mapping</figcaption>
+		  </td>
+      <td>
+        <img src="images/part5-7.gif" align="middle" height="280px"/>
+        <figcaption align="middle">Displacement Mapping</figcaption>
+		  </td>
+		</tr>
+  </table>
+</div>
+<br>
+
+<p>
+  In the following images, we show bump mapping on the sphere in the left column and displacement mapping in the right column. In the first row, we use a horizontal and vertical resolution of 16 while the second row has a resolution of 128 across both dimensions. We observe that raising the resolution leads to the emergence of finer details for both shaders, especially near the visible edges of the sphere. For displacement mapping in particular, we see a drastic increase in the amount of lifted, spiky leaf details in the sphere's geometry.
 </p>
 
 <br>
 <div align="middle">
   <table cellpadding="10">
+		<tr>
+			<th align="middle"><b>Bump Mapping</b></th>
+			<th align="middle"><b>Displacement Mapping</b></th>
+		</tr>
     <tr>
       <td>
-        <img src="images/part2-1.png" align="middle" height="250px"/>
-        <figcaption align="middle">$\alpha$ = 0.5</figcaption>
+        <img src="images/part5-8.png" align="middle" height="260px"/>
       </td>
       <td>
-        <img src="images/part2-2.png" align="middle" height="250px"/>
-        <figcaption align="middle">$\alpha$ = 0.25</figcaption>
+        <img src="images/part5-9.png" align="middle" height="260px"/>
       </td>
+    </tr>
+		<tr>
+			<th align="middle" colspan="2"><b>Resolution: 16x16</b></th>
 		</tr>
 		<tr>
 			<td>
-        <img src="images/part2-3.png" align="middle" height="250px"/>
-        <figcaption align="middle">$\alpha$ = 0.05</figcaption>
-      </td>
-	  	<td>
-        <img src="images/part2-4.png" align="middle" height="250px"/>
-        <figcaption align="middle">$\alpha$ = 0.005</figcaption>
-      </td>
-    </tr>
+				<img src="images/part5-10.png" align="middle" height="260px"/>
+			</td>
+			<td>
+				<img src="images/part5-11.png" align="middle" height="260px"/>
+			</td>
+		</tr>
+		<tr>
+			<th align="middle" colspan="2"><b>Resolution: 128x128</b></th>
+		</tr>
   </table>
 </div>
 <br>
 
 <p>
-	The sampling method also has a noticeable impact when rendering with the microfacet model. Cosine hemisphere sampling, a technique typically used for sampling diffuse BRDFs, produces high specularity when modeling a microfacet object with a smooth macro surface (low $\alpha$ value). This creates undesirable peppered spots scattered across the material. If we instead perform importance sampling according to the more suitable Beckmann distribution, we are able to curtail these speckles on the surface, producing a smoother, more natural-looking finish.
+  Our last shader is an environment-mapped reflection, producing a mirror effect based on a cube map texture of a bridge crossing the Vindel River in northern Sweden.
 </p>
 
 <br>
 <div align="middle">
-  <table cellpadding="10">
-    <tr>
-      <td>
-        <img src="images/part2-5.png" align="middle" height="250px"/>
-        <figcaption align="middle">Cosine Hemisphere Sampling</figcaption>
-      </td>
-      <td>
-        <img src="images/part2-6.png" align="middle" height="250px"/>
-        <figcaption align="middle">Beckmann Importance Sampling</figcaption>
-      </td>
-    </tr>
-  </table>
-</div>
-<br>
-
-<p>
-	Tweaking other parameters like the refractive index and the extinction coefficient of the macro surface also has interesting visual effects on the constructed material. In the following image, we model a conductive material called Purple Plague, which is an aluminum and gold intermetallic. It has refractive indices of (1.3345, 1.8252, 2.1715) and extinction coefficients of (2.2091, 1.9416, 2.4688) for the red, green, and blue channels, respectively.
-</p>
-
-<br>
-<div align="middle">
-	<img src="images/part2-7.png" align="middle" width="500px"/>
+  <img src="images/part5-12.gif" align="middle" height="280px"/>
+  <figcaption align="middle">Environment-Mapped Reflection</figcaption>
 </div>
 <br>
 
 <h3>Webpage Link:</h3>
-<a href=https://martinhodde.github.io/cs184-proj-webpage/proj3-2>martinhodde.github.io/cs184-proj-webpage/proj3-2</a>
+<a href=https://martinhodde.github.io/cs184-proj-webpage/proj4>martinhodde.github.io/cs184-proj-webpage/proj4</a>
 </body>
 </html>
