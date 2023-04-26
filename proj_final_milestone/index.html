@@ -1,0 +1,152 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+  th {
+		font-weight: normal;
+  }
+</style>
+<script>
+  MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'global' }
+  };
+</script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+</script>
+
+<title>CS 184 Project Milestone</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2023</h1>
+<h1 align="middle">Final Project Milestone: Realistic Fireboy</h1>
+<h2 align="middle">Stefanie Gschwind, Martin Hodde, Kayla Kranen, Edith Llontop</h2>
+
+<br>
+<div align="middle">
+  <img src="images/fireboy.png" align="middle" width="300px"/>
+</div>
+<br>
+
+<br>
+<h2>Preliminary Results</h2>
+<p>
+	So far, we have created a 3D mesh of Fireboy, two fire shaders (one realistic, one stylized) for the body, and a couple of 3D particle-based fire simulations for the head. Altogether, we have completed most of the components of our objective of creating a realistic Fireboy. Most of what remains is to combine these constituent parts into a lively character.
+</p>
+
+<br>
+<div align="middle">
+  <img src="images/mesh.png" align="middle" width="300px"/>
+  <figcaption align="middle">Fireboy Mesh</figcaption>
+</div>
+<br>
+
+<p>
+  Originally, we tried to port over our code from previous projects and use it as a baseline for this one, but we quickly realized that the new elements that creating Fireboy entails do not easily fit within the framework of a cloth simulator or general mesh editor. Instead, we opted to implement our Fireboy using the Unity platform so that we could avoid the tedious overhead of developing a base environment in which Fireboy could even exist.
+</p>
+<p>
+  We drew customized fire textures on a tablet and used High-Level Shading Language (HLSL) to program our shaders. Unity offers a plethora of features including a visual effect graph and debugging support for the rendering pipeline which facilitated our shader development process. Below, we display one of our shader graphs in Unity as well as the resulting shaders.
+</p>
+
+<br>
+<div align="middle">
+  <img src="images/graph.png" align="middle" width="750px"/>
+  <figcaption align="middle">Shader Graph</figcaption>
+</div>
+<br>
+<div align="middle">
+  <table cellpadding="20">
+    <tr>
+      <td>
+        <img src="images/shader1.gif" align="middle" height="280px"/>
+        <figcaption align="middle">Realistic Shader</figcaption>
+      </td>
+      <td>
+        <img src="images/shader2.gif" align="middle" height="280px"/>
+        <figcaption align="middle">Stylized Shader</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<p>
+  Unity also provides a C# scripting interface with which we are able to control the properties and evolution of the particle system that defines our fire. At its core, our model consists of an invisible cone whose base emits particles with our custom fire textures mapped onto them. The particles become darker and collectively resemble smoke as they rise, eventually dissipating into the sky at a certain height. A point light source is used to depict an ember at the bottom of the flame which can be observed spewing out sparks intermittently. The following two images show our initial attempt at a particle-based fire model and our final version, respectively.
+</p>
+<br>
+<div align="middle">
+  <table cellpadding="20">
+    <tr>
+      <td>
+        <img src="images/fire1.gif" align="middle" height="280px"/>
+        <figcaption align="middle">Particle System (Initial)</figcaption>
+      </td>
+      <td>
+        <img src="images/fire2.gif" align="middle" height="280px"/>
+        <figcaption align="middle">Particle System (Final)</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<h2>Schedule Progress</h2>
+<h3>Original Schedule:</h3>
+<ul>
+  <li>
+    <b>Week 1:</b> Produce a rendering of static fire.
+  </li>
+  <li>
+    <b>Week 2:</b> Add organic movement and smoke to the fire.
+  </li>
+  <li>
+    <b>Week 3:</b> Shape fire into Fireboy character.
+  </li>
+  <li>
+    <b>Week 4:</b> Prepare presentation and implement stretch goals (time permitting).
+  </li>
+</ul>
+
+<p>
+  Though we kept our planned tasks quite vague, we were able to accomplish much of what we had planned in our original proposal to our own surprise. We rendered a couple different types of 2D fire shaders and 3D fire simulations while familiarizing ourselves with the Unity environment. We are currently working on applying these elements to Fireboy’s mesh in a convincing manner. The method we are exploring at the moment is partitioning Fireboy into pieces and rendering different parts of him using different shaders and textures. Applying only one shader uniformly over Fireboy’s frame looks weird, so we will come up with a more aesthetically successful alternative. This problem is only exacerbated by the fact that the fire shaders are transparent, but we are looking into fixing it either by changing the alpha channel of the underlying textures. Going forward, our primary goals are to fix the 2D shader applied to Fireboy’s body and then inject the 3D fire particle system onto his head. In the coming week, we are also hopeful that we will be able to actually put Fireboy in motion with the animation rigging system in Unity.
+</p>
+
+<br>
+<div align="middle">
+  <img src="images/shader_map.png" align="middle" width="200px"/>
+  <figcaption align="middle">Broken Shader Mapping</figcaption>
+</div>
+<br>
+
+<h2>Work Plan Adjustments</h2>
+<p>
+  Since the project has gone relatively smoothly so far, we intend to stick to our original schedule and put the finishing touches on Fireboy in the next week or so.
+</p>
+
+<h2>Video</h2>
+<div align="middle">
+  <iframe src="https://drive.google.com/file/d/1cXYA-6_qY0a8yF4mDHZMBjWCS41LCbzd/preview" width="640" height="480" allow="autoplay"></iframe>
+</div>
+
+<h2>Slides</h2>
+<a href=https://docs.google.com/presentation/d/1-ABP-Nyio2UV7Dv3xq_DyjRoMeCE6twj3DLhYxfGZys/edit?usp=sharing>Fireboy Presentation</a>
+
+</body>
+</html>
