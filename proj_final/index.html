@@ -1,0 +1,202 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+  th {
+		font-weight: normal;
+  }
+</style>
+<script>
+  MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'global' }
+  };
+</script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+</script>
+
+<title>CS 184 Final Project</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2023</h1>
+<h1 align="middle">Final Project: Realistic Fireboy</h1>
+<h2 align="middle">Stefanie Gschwind, Martin Hodde, Kayla Kranen, Edith Llontop</h2>
+
+<br>
+<div align="middle">
+  <img src="images/fireboy.png" align="middle" width="300px">
+  <figcaption align="middle">Original Fireboy</figcaption>
+</div>
+<br>
+
+<h2>Abstract</h2>
+<p>
+  Fireboy and Watergirl is an iconic game of our childhoods, but it has not kept up with technological advancements in computer graphics. Making humanoid characters out of unconventional materials like fire and water is a difficult undertaking but a necessary one in the continued advancement of animation and entertainment. In this project, we leverage Blender to implement a 3D model of Fireboy, and the Unity Platform to create custom fire and smoke particle systems, flowing lava shaders, and animations for the completed character within his thematic environment.
+</p>
+
+<br>
+<div align="middle">
+  <img src="images/dance.gif" align="middle" width="800px">
+  <figcaption align="middle">Fireboy Performing the Macarena</figcaption>
+</div>
+<br>
+
+<h2>Technical Approach</h2>
+<p>
+  While we originally tried to reuse previous projects in the course as the basis on which we would build our project, we eventually switched gears to working in Unity instead, opting to forgo the overhead of getting a base environment set up with OpenGL. Our project was partitioned into the following steps: creating 2D fire shaders, constructing the 3D fire and smoke particle simulator, building and animating the Fireboy mesh, finalizing Fireboy’s skin shader, and producing the background scene, which included writing a lava shader and designing a level for Fireboy to complete.
+</p>
+
+<h3>2D Fire Shaders (Realistic and Stylized)</h3>
+<p>
+  For the stylized fire we used Unity’s Shader Graph program which allows the user to assemble a shader similar to how one would code something in Scratch. For this shader we imported Unity’s Noise library which gives us access to Simple, Gradient, and Voronoi noise. This fire uses Simple Noise as its basis. We create the movement of the fire by using time information to control the offset of the Simple Noise. We further manipulate the moving noise with a sequence of multiplications, power functions, and additions, until we posterize the noise into three separate segments. We add this posterization to the shape of an ellipse whose $uv$ coordinates are controlled by an earlier (pre-posterized) stage of the moving Simple Noise. We multiply this by our chosen color and end up with the base color and alpha values of our stylized shader.
+</p>
+<p>
+  For the realistic fire we wrote programs in High-Level Shading Language (HLSL) and used Gradient Noise, Voronoi noise, and texture sampling to create the desired effect. Utilizing the example code given in the Unity Time API as a baseline, we coded an HLSL equivalent to the Sapher Graph Time node and used two different scaled versions of this value as the offset for the Gradient Noise and the Voronoi noise. We linearly interpolated the offset Gradient Noise with the different $uv$ coordinates of the mesh and used the resulting value as the coordinates at which to sample Unity’s Default-Particle texture. We multiplied the pre-interpolation Gradient Noise with the Voronoi, and multiplied this product by the output values of the aforementioned texture sampling. Finally, we multiplied our value by the appropriate RGB color to achieve the resulting shader color and behavior. For the sake of comprehensibility and brevity we have omitted multiple arithmetic manipulations which were performed in between the above steps.
+</p>
+  This design for a fire shader was inspired by <a href=https://www.shadertoy.com/view/4tlSzl>Shadertoy</a> and by this <a href=https://cs184-firesim.github.io/final-report>Fire Simulation</a>.
+  The process for both of these shaders was quite involved since this was, for most of the group, an introduction to working with Unity. We ran into a lot of syntax-based bugs which some basic debugging eventually solved
+  (<a href=https://docs.unity3d.com/ScriptReference/Time-time.html>ScriptReference/Time-time</a>).
+</p>
+<br>
+<div align="middle">
+  <img src="images/graph.png" align="middle" width="850px">
+  <figcaption align="middle">Shader Graph</figcaption>
+</div>
+<br>
+
+<h3>3D Fire and Smoke Simulation</h3>
+<p>
+  Initially, we planned to create a 3D fire simulation using Navier-Stokes equations to simulate the evolution of particles. However, with the constraint that we needed to be able to shape the fire into a character and connect it to a moving 3D model, we settled for a simpler, but still aesthetically sound alternative without remaining physically faithful to real fluid dynamics. Using Unity’s particle system object, we generated particles and applied a script that controlled each particle’s velocity, density, pressure, light, and color over its lifetime. Additionally, the script defined how the particles collide and dissipate. This allowed us to create a cone-shaped area where textured fire particles were generated before floating upwards, turning into smoke, and finally dissipating. One difficulty we encountered with this technique was making the particle system static with respect to our moving 3D model. Since the systems that generated the particles were attached to the model, they moved with it, but we did not want the individual particles to move rigidly with their base spawner. To fix this, we transformed the particles from the local particle system’s coordinate space into the global world space upon spawning, causing the flames to trail behind Fireboy as he moved (<a href=https://docs.unity3d.com/ScriptReference/ParticleSystem.html>ScriptReference/ParticleSystem</a>).
+</p>
+<br>
+<div align="middle">
+  <img src="images/fire2.gif" align="middle" width="250px">
+  <figcaption align="middle">Particle Simulation</figcaption>
+</div>
+<br>
+
+<h3>Creating and Animating the Fireboy Mesh</h3>
+<p>
+  We began by creating a 3D mesh of Fireboy using Blender. We found a starter mesh for a base character online and using Blender we were able to incorporate its facial features. Next, we rigged a skeleton with Adobe Mixamo to define key points in the mesh (wrists, elbows, knees, hips, chin, etc.), and connect them. Once our model was rigged, we were able to define the location of each part of the skeleton at specific keyframes to create different animations. Once we imported these into unity, we used an Animation Controller to play fun animations while the character was doing certain actions (running, jumping, idle). One difficulty we encountered when creating our own mesh was making sure intersecting objects were properly displayed. In particular, Fireboy’s eyes are made of two overlapping spheres, which took many tries to render correctly. Eventually, we figured out that both spheres would render correctly if we inverted their normals, which fooled Unity into thinking the objects were not intersecting (<a href=https://www.mixamo.com>Mixamo</a>).
+</p>
+<br>
+<div align="middle">
+  <img src="images/mesh.png" align="middle" width="350px">
+  <figcaption align="middle">Fireboy Mesh</figcaption>
+</div>
+<br>
+
+<h3>Scripting the Scene</h3>
+<p>
+  In order to control the character’s actions, as well as make the scene interactive, we needed to create C# scripts. We began by creating a character script which allowed us to move the character: when the player pressed “Space”, we applied a vertical force to the character, and when the player pressed “A” or “D”, we rotated the character, and applied a horizontal velocity. Together, this allowed the player to make the character run and jump. In addition to simple movement, the scripts controlled scene changes, flickering lights, and Fireboy’s ability to “pick up” gems from the scene. We were also able to make the lava flow by scripting in movement and distortion in texture space.
+</p>
+<br>
+<div align="middle">
+  <img src="images/script.png" align="middle" width="450px">
+  <figcaption align="middle">Movement Scripting Snippet</figcaption>
+</div>
+<br>
+
+<h3>Finalizing the Fireboy Shader</h3>
+<p>
+  We ultimately decided to use 2D shaders for Fireboy’s body and head and attach several small 3D fire and smoke simulation objects to the crown of his head. We chose this design for several reasons. First, rendering Fireboy out of only the fire/smoke simulation would make him appear mostly formless and would be incredibly slow. Also, using 2D fire shaders for his body would make implementing animation easier as the 2D shader could easily be applied to rigged mesh. Furthermore, having a mixture of 2D shaders and 3D simulations would allow us to combine all components of our project in our final deliverable. To that end, we had to make some modifications to the original realistic 2D fire shader we had coded as applying it to Fireboy as-is ended up looking funky. We added an additional base color everywhere so the shader was no longer transparent and we changed the shader so that it emits colored light (red or yellow depending on the local base color) into its surrounding uniformly. This last change forced us to change the render pipeline we were using in Unity from the Standard Render Pipeline to the Universal Render Pipeline. This change broke all of our shaders (luckily not the 3D simulation as well) and we had to rewrite them for URP. Finally, we attached multiple small fire and smoke simulations to the crown of Fireboy’s head by making them child objects of the Fireboy object in Unity via the built-in hierarchical structure.
+</p>
+
+<br>
+<div align="middle">
+  <img src="images/skin.gif" align="middle" width="350px">
+  <figcaption align="middle">Glowing Shader</figcaption>
+</div>
+<br>
+
+<h3>Scene Creation (Level Design and Lava Shader)</h3>
+<p>
+  To create the environment in which Fireboy lives, we drew inspiration from the level design of the original game. This included: platforms Fireboy can jump to, gems Fireboy can collect, and a final destination –the door– that Fireboy must reach in order to complete the level. We created all walls and platforms using Unity’s 3D Plane objects which we rotated and scaled appropriately. We then applied a stone texture we found on the Unity Asset Store to these platforms. For the lava in the scene, we created more 3D Platforms and placed them slightly above/in front of the other platforms and applied our own flowing lava shader to them. For the door object, we found a door asset on the Unity Asset Store and just placed it into the scene in the desired location. Finally, to create the gems, we created scaled-down 3D Sphere objects and applied a simple red-colored light-emitting shader which for simplicity we created using the Unity Universal RP Lit Shader Graph. The links to the door asset and stone texture which we used from the Unity Asset Store are provided here: <a href=https://assetstore.unity.com/packages/3d/props/interior/door-free-pack-aferar-148411>Door Asset</a> <a href=https://assetstore.unity.com/packages/2d/textures-materials/stone/stone-cliff-texture-66497>Stone Texture Asset</a> 
+</p>
+<br>
+<div align="middle">
+  <img src="images/scene.png" align="middle" width="800px">
+  <figcaption align="middle">Base Scene (Without Lava)</figcaption>
+</div>
+<br>
+
+<h2>Results</h2>
+<p>
+  Below, we show the complete animated Fireboy playing in his fiery environment.
+</p>
+<br>
+<div align="middle">
+  <img src="images/playthrough.gif" align="middle" width="850px">
+</div>
+<br>
+<p>
+  You can play the game here: <a href=https://kmkranen.itch.io/the-adventures-of-rendering-fireboy>The Adventures of Rendering Fireboy</a>
+</p>
+
+<h2>Video</h2>
+<div align="middle">
+  <iframe src="https://drive.google.com/file/d/1uCVOhoiLavZBomh_bSyhsvq8xSD8Oh8c/preview" width="640" height="480" allow="autoplay"></iframe>
+</div>
+
+<h2>Contributions</h2>
+<p>
+  <b>Kayla:</b> 3D Particle System Fire, Unity Scripting, Animation Controller, Scene Controller, Milestone Presentation, Proposal/Milestone/Final Websites <br>
+  <b>Edith:</b> Mesh Creation, Animation Controller, Final and Proposal Presentation, Proposal/Milestone/Final Websites <br>
+  <b>Stefanie:</b> 2D Fire Shader Stylized, 2D Fire Shader Realistic, Fireboy Skin Shader, Glow Shader, Level Scene Design, Milestone Presentation, Proposal/Milestone/Final Websites <br>
+  <b>Martin:</b> 3D Particle System Fire, Unity Scripting, Flowing Lava Shader, Proposal/Milestone/Final Websites <br>
+</p>
+
+<h2>References</h2>
+<p>
+  <a href=https://learn.unity.com/tutorial/introduction-to-shader-graph>Introduction to ShaderGraph</a><br>
+  <a href=https://godotshaders.com/shader/2d-fire>Texture based 2D fire</a><br>
+  <a href=https://clockworkchilli.com/blog/8_a_fire_shader_in_glsl_for_your_webgl_games>A Fire Shader in GLSL for your WebGL Games</a><br>
+  <a href=https://www.shadertoy.com/view/XsXSWS>Fires</a><br>
+  <a href=https://www.shadertoy.com/view/MdKfDh>Fire Shader 1</a><br>
+  <a href=https://www.febucci.com/2019/05/fire-shader>Fire Shader 2</a><br>
+  <a href=https://www.shadertoy.com/view/MtXSzS>Pyroclastic fireball</a><br>
+  <a href=https://greentec.github.io/shadertoy-fire-shader-en>Shadertoy - Fireshader</a><br>
+  <a href=https://cs184-firesim.github.io/final-report>Fire Simulation and Rendering</a><br> 
+  <a href=https://www.youtube.com/watch?v%3DHqaQJfuK_u8%26ab_channel%3DUGuruz>Basics of Universal Rendering Pipeline</a><br> 
+  <a href=https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@7.1/manual/InstallURPIntoAProject.html>Installing the Universal Render Pipeline into an existing Project</a><br>
+  <a href=https://learn.unity.com/tutorial/introduction-to-urp>Introduction to URP</a><br> 
+  <a href=https://answers.unity.com/questions/1761364/how-to-add-emission-to-my-custom-shader.html>Adding emission to shaders </a><br>
+  <a href=http://www.opengl-tutorial.org/beginners-tutorials/tutorial-1-opening-a-window/%23building-on-mac>Opening a window</a><br> 
+  <a href=https://www.youtube.com/watch?v%3DAwVVt9Ht5Q8%26list%3DPLboXykqtm8dwOqpLuG5R0xPkFwJ0-dUan%26index%3D2%26ab_channel%3DJayanam>OpenGL C++: Getting Started</a><br> 
+  <a href=https://adrianb.io/2014/08/09/perlinnoise.html>Understanding Perlin Noise</a><br> 
+  <a href=https://gamedevelopment.tutsplus.com/tutorials/how-to-write-a-smoke-shader--cms-25587>How to Write a Smoke Shader</a><br> 
+  <a href=http://ryansumner.github.io/FireParticles>Fire Particles using C++ and OpenGL</a><br> 
+  <a href=https://docs.unity3d.com/ScriptReference/Mathf.html>Mathf API</a><br> 
+  <a href=https://gamedevbeginner.com/the-right-way-to-lerp-in-unity-with-examples>The Right Way to LERP in Unity</a><br> 
+  <a href=https://danielilett.com/2021-05-20-every-shader-graph-node>How to Use Every Node in Unity ShaderGraph</a><br> 
+  <a href=https://www.youtube.com/watch?v%3DfwKQyDZ4ark%26ab_channel%3DSimonschreibt>Stylized VFX in RIME</a><br> 
+  <a href=https://www.red-gate.com/simple-talk/development/dotnet-development/creating-a-shader-in-unity>Creating a Shader in Unity</a><br> 
+  <a href=https://docs.unity3d.com/560/Documentation/Manual/SL-ShadingLanguage.html%23:~:text%3DIn%2520Unity%252C%2520shader%2520programs%2520are,the%2520two%2520are%2520the%2520same>Shading Language used in Unity</a><br>
+  <a href=https://www.youtube.com/watch?v%3Dwe406Hc_WrM%26ab_channel%3DGabrielAguiarProd>Unity VFX Graph - Disintegrate and Dissolve Effect Tutorial</a><br>
+  <a href=https://answers.unity.com/questions/1749843/two-shaders-for-one-model.html>Two shaders for one model</a><br>
+  <a href=https://www.youtube.com/watch?v%3DnB0r0c-SIVg%26ab_channel%3DUGuruz>How to fix Pink Materials in Unity</a><br>
+  <a href=https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@7.1/manual/configuring-universalrp-for-use.html>Configuring the Universal Render Pipeline</a><br> 
+  <a href=https://www.youtube.com/watch?v%3DUrlfRvxKV_s>Creating the Fireboy mesh</a><br>
+  <a href=https://www.cgtrader.com/free-3d-models/character/child/chibi-body>Starting mesh</a><br>
+  <a href=https://www.youtube.com/watch?v%3DXByixdPmmcI%26t%3D516s>Using Mixamo for auto-generating rigs and animation</a><br>
+</p>
+<br>
+
+</body>
+</html>
